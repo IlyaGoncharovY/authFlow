@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import { loginLocal, loginCookie, refreshToken } from '../controllers/auth/authController';
+import { loginLocal, loginCookie, refreshToken } from '../controllers';
 
 const router = Router();
 
