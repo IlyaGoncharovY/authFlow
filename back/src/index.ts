@@ -1,7 +1,15 @@
 import express from 'express';
+import cookieParser from 'cookie-parser';
+
+import authRoutes from './routes/authRoutes';
 
 const app = express();
-const port = 2999;
+const port = process.env.PORT || 2999;
+
+app.use(express.json());
+app.use(cookieParser());
+
+app.use('/api/auth', authRoutes);
 
 app.get('/', (req, res) => {
   res.send('Привет, друг!');
