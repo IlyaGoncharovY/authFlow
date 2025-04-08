@@ -67,3 +67,12 @@ export const refreshToken: RequestHandler<{}, any, RefreshRequestBody> = (req, r
     res.json({ token: newToken });
   });
 };
+
+export const registerUser: RequestHandler<{}, any, AuthRequestBody> = (req, res) => {
+  const { username, password } = req.body;
+
+  const token = jwt.sign({ username }, ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
+  const refreshToken = jwt.sign({ username }, REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
+
+  res.json({ token, refreshToken, username });
+};
