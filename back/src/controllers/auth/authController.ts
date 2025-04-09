@@ -1,47 +1,92 @@
 import {RequestHandler} from 'express';
 import jwt from 'jsonwebtoken';
 
+import {createUser, findUser, validatePassword} from '../../libs/userService';
+import {generateTokens} from '../../libs/jwtService';
+import {logUserAction} from '../../libs/logger';
+
 import {AuthRequestBody, JwtPayload, RefreshRequestBody} from './types/authTypes';
 
-const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || 'your_access_token_secret';
+//const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || 'your_access_token_secret';
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || 'your_refresh_token_secret';
 
-export const loginLocal: RequestHandler<{}, any, AuthRequestBody> = (req, res): void => {
+export const registerUser: RequestHandler<{}, any, AuthRequestBody> = async (req, res) => {
   const { username, password } = req.body;
-  if (username && password) {
-    const token = jwt.sign({ username }, ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
-    const refreshToken = jwt.sign({ username }, REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
 
-    const tokenParts = token.split('.');
-    console.log('JWT Token Parts:');
-    console.log('Header:', tokenParts[0]);
-    console.log('Payload:', tokenParts[1]);
-    console.log('Signature:', tokenParts[2]);
-
-    res.json({ token, refreshToken });
+  const existing = await findUser(username);
+  if (existing) {
+    res.status(400).json({ message: 'Пользователь уже существует' });
     return;
   }
-  res.status(401).json({ message: 'Неверные учетные данные' });
+
+  await createUser(username, password);
+
+  const { token, refreshToken } = generateTokens(username);
+  logUserAction('register', username, token);
+
+  res.json({ token, refreshToken, username });
 };
 
-export const loginCookie: RequestHandler<{}, any, AuthRequestBody> = (req, res): void => {
-  const { username, password } = req.body;
-  if (username && password) {
-    const token = jwt.sign({ username }, ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
-    const refreshToken = jwt.sign({ username }, REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
+export const loginUser = (
+  options: { useCookie: boolean } = { useCookie: false },
+): RequestHandler<{}, any, AuthRequestBody> => {
+  return async (req, res) => {
+    const { username, password } = req.body;
 
-    res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'strict', maxAge: 15 * 60 * 1000 });
-    res.cookie('refreshToken', refreshToken,
-      { httpOnly: true, secure: true, sameSite: 'strict', maxAge: 7 * 24 * 60 * 60 * 1000 });
+    const user = await findUser(username);
 
-    res.json({ message: 'Авторизация прошла успешно, токены установлены в куки' });
-    return;
-  }
-  res.status(401).json({ message: 'Неверные учетные данные' });
+    if (!user || !(await validatePassword(user.password, password))) {
+      res.status(401).json({ message: 'Неверные учетные данные' });
+      return;
+    }
+
+    const { token, refreshToken } = generateTokens(username);
+    logUserAction('login', username, token);
+
+    if (options.useCookie) {
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 15 * 60 * 1000,
+      });
+
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      res.json({ message: 'Авторизация прошла успешно (cookie)' });
+      return;
+    }
+
+    res.json({ token, refreshToken, username });
+  };
 };
 
-export const refreshToken: RequestHandler<{}, any, RefreshRequestBody> = (req, res): void => {
+export const logout: RequestHandler = (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'strict',
+  });
+
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'strict',
+  });
+
+  console.log(`🚪 Пользователь вышел из системы`);
+
+  res.json({ message: 'Выход выполнен, куки удалены' });
+};
+
+export const refreshToken: RequestHandler<{}, any, RefreshRequestBody> = (req, res) => {
   let tokenFromRequest = req.body.refreshToken;
+
   if (!tokenFromRequest && req.cookies?.refreshToken) {
     tokenFromRequest = req.cookies.refreshToken;
   }
@@ -56,23 +101,22 @@ export const refreshToken: RequestHandler<{}, any, RefreshRequestBody> = (req, r
       res.status(403).json({ message: 'Неверный refresh-токен' });
       return;
     }
-    const payload = decoded as JwtPayload;
-    const newToken = jwt.sign({ username: payload.username }, ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
+
+    const { username } = decoded as JwtPayload;
+    const { token } = generateTokens(username);
 
     if (req.cookies?.refreshToken) {
-      res.cookie('token', newToken, { httpOnly: true, secure: true, sameSite: 'strict', maxAge: 15 * 60 * 1000 });
-      res.json({ message: 'Access-токен обновлён', token: newToken });
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 15 * 60 * 1000,
+      });
+
+      res.json({ message: 'Access-токен обновлён', token });
       return;
     }
-    res.json({ token: newToken });
+
+    res.json({ token });
   });
-};
-
-export const registerUser: RequestHandler<{}, any, AuthRequestBody> = (req, res) => {
-  const { username, password } = req.body;
-
-  const token = jwt.sign({ username }, ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
-  const refreshToken = jwt.sign({ username }, REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
-
-  res.json({ token, refreshToken, username });
 };
