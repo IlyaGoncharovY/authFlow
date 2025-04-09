@@ -1,0 +1,19 @@
+.loginFormContainer {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    border: 1px solid black;
+    border-radius: 9px;
+    padding: 10px;
+
+    form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+
+        &:hover {
+            box-shadow: -15px 15px 5px 0 #ED6742;
+            transition: all 0.5s ease-out;
+        }
+    }
+}
