@@ -1,12 +1,13 @@
-import { Router } from 'express';
+import {Router} from 'express';
 
-import {loginLocal, loginCookie, refreshToken, registerUser} from '../controllers';
+import {loginUser, logout, refreshToken, registerUser} from '../controllers';
 
 const router = Router();
 
-router.post('/login-local', loginLocal);
-router.post('/login-cookie', loginCookie);
-router.post('/refresh', refreshToken);
+router.post('/login-local', loginUser({ useCookie: false }));
+router.post('/login-cookie', loginUser({ useCookie: true }));
 router.post('/register', registerUser);
+router.post('/refresh', refreshToken);
+router.post('/logout', logout);
 
 export default router;
