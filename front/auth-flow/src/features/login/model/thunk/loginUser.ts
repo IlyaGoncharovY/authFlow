@@ -5,7 +5,7 @@ import { setCredentials, logout } from '../authSlice.ts';
 import { AppThunk } from '@/store/store.ts';
 
 export const loginUser =
-    (username: string, password: string): AppThunk =>
+    (username: string, password: string, mode: 'local' | 'cookie'): AppThunk =>
       async (dispatch) => {
         try {
           const res = await authAPI.auth({ username, password });
@@ -15,7 +15,7 @@ export const loginUser =
               token: res.token,
               refreshToken: res.refreshToken,
               username: res.username,
-              mode: 'local',
+              mode: mode,
             }),
           );
         } catch (err) {

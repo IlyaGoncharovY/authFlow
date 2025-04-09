@@ -1,11 +1,15 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
+import {NullableType, selectModeLSOrCookieType} from 'shared/types';
+
+import {LS_KEYS} from '@/shared/constants/localStorageKeys.ts';
+
 interface AuthState {
-  token: string | null;
-  refreshToken: string | null;
-  username: string | null;
+  token: NullableType<string>;
+  refreshToken: NullableType<string>;
+  username: NullableType<string>;
   isAuth: boolean;
-  mode: 'local' | 'cookie' | null;
+  mode: NullableType<selectModeLSOrCookieType>;
   isAppReady: boolean;
 }
 
@@ -28,7 +32,7 @@ const authSlice = createSlice({
           token?: string;
           refreshToken?: string;
           username?: string;
-          mode: 'local' | 'cookie';
+          mode: selectModeLSOrCookieType;
         }>,
     ) => {
       state.token = action.payload.token || null;
@@ -38,8 +42,8 @@ const authSlice = createSlice({
       state.mode = action.payload.mode;
     },
     logout: (state) => {
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('auth_refresh');
+      localStorage.removeItem(LS_KEYS.AUTH_TOKEN);
+      localStorage.removeItem(LS_KEYS.REFRESH_TOKEN);
       state.token = null;
       state.refreshToken = null;
       state.username = null;

@@ -1,5 +1,7 @@
 import type { AuthRequestBody, LoginLocalResponse, RegisterResponse } from '../model/authTypes';
 
+import {LS_KEYS} from '@/shared/constants/localStorageKeys.ts';
+
 const API_URL = 'http://localhost:2999/api/auth';
 
 export const authAPI = {
@@ -16,8 +18,8 @@ export const authAPI = {
 
     const data: LoginLocalResponse = await res.json();
 
-    localStorage.setItem('auth_token', data.token);
-    localStorage.setItem('auth_refresh', data.refreshToken);
+    localStorage.setItem(LS_KEYS.AUTH_TOKEN, data.token);
+    localStorage.setItem(LS_KEYS.REFRESH_TOKEN, data.refreshToken);
 
     return data;
   },
@@ -35,14 +37,14 @@ export const authAPI = {
 
     const data: RegisterResponse = await res.json();
 
-    localStorage.setItem('auth_token', data.token);
-    localStorage.setItem('auth_refresh', data.refreshToken);
+    localStorage.setItem(LS_KEYS.AUTH_TOKEN, data.token);
+    localStorage.setItem(LS_KEYS.REFRESH_TOKEN, data.refreshToken);
 
     return data;
   },
 
   async refreshToken(): Promise<{ token: string }> {
-    const refreshToken = localStorage.getItem('auth_refresh');
+    const refreshToken = localStorage.getItem(LS_KEYS.AUTH_TOKEN);
 
     if (!refreshToken) {
       throw new Error('Refresh-токен не найден');
@@ -59,12 +61,12 @@ export const authAPI = {
     }
 
     const data = await res.json();
-    localStorage.setItem('auth_token', data.token);
+    localStorage.setItem(LS_KEYS.AUTH_TOKEN, data.token);
     return data;
   },
 
   logout() {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_refresh');
+    localStorage.removeItem(LS_KEYS.AUTH_TOKEN);
+    localStorage.removeItem(LS_KEYS.REFRESH_TOKEN);
   },
 };
