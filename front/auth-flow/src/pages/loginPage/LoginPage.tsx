@@ -1,5 +1,7 @@
 import {useNavigate} from 'react-router-dom';
 
+import {useEffect} from 'react';
+
 import {LoginForm} from '../../features/login/ui/loginForm/LoginForm.tsx';
 import {RegisterForm} from '../../features/login/ui/registerForm/RegisterForm.tsx';
 
@@ -10,7 +12,11 @@ export const LoginPage = () => {
 
   const navigate = useNavigate();
 
-  if (isAuth) navigate('/');
+  useEffect(() => {
+    if (isAuth) {
+      navigate('/', { replace: true });
+    }
+  }, [isAuth, navigate]);
 
   return (
     <div>
