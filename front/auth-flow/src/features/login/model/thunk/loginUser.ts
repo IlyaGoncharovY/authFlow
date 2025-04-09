@@ -8,16 +8,27 @@ export const loginUser =
     (username: string, password: string, mode: 'local' | 'cookie'): AppThunk =>
       async (dispatch) => {
         try {
-          const res = await authAPI.auth({ username, password });
+          const res = await authAPI.auth({ username, password }, mode);
 
-          dispatch(
-            setCredentials({
-              token: res.token,
-              refreshToken: res.refreshToken,
-              username: res.username,
-              mode: mode,
-            }),
-          );
+          if (mode === 'local' && res) {
+            dispatch(
+              setCredentials({
+                token: res.token,
+                refreshToken: res.refreshToken,
+                username: res.username,
+                mode,
+              }),
+            );
+          } else {
+            dispatch(
+              setCredentials({
+                token: undefined,
+                refreshToken: undefined,
+                username,
+                mode,
+              }),
+            );
+          }
         } catch (err) {
           console.error('Ошибка логина:', err);
           dispatch(logout());
