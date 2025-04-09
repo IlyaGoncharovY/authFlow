@@ -1,11 +1,9 @@
 import {RequestHandler} from 'express';
 import jwt from 'jsonwebtoken';
 
-import {createUser, findUser, validatePassword} from '../../libs/userService';
-import {generateTokens} from '../../libs/jwtService';
-import {logUserAction} from '../../libs/logger';
-
 import {AuthRequestBody, JwtPayload, RefreshRequestBody} from './types/authTypes';
+
+import {createUser, findUser, validatePassword, generateTokens, logUserAction} from '@/libs';
 
 //const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || 'your_access_token_secret';
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || 'your_refresh_token_secret';
@@ -79,7 +77,7 @@ export const logout: RequestHandler = (req, res) => {
     sameSite: 'strict',
   });
 
-  console.log(`🚪 Пользователь вышел из системы`);
+  console.log('🚪 Пользователь вышел из системы');
 
   res.json({ message: 'Выход выполнен, куки удалены' });
 };
